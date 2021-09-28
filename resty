@@ -25,10 +25,34 @@ export _RESTY_DATA_DIR _RESTY_CONF_DIR
 
 function resty() {
 
+    if [[ $1 =~ ^-h\|--help$ ]]; then
+        cat <<HELP
+resty [host] [options]:
+
+      Set the host and default options to provided values
+HELP
+        -resty-help-options
+	cat <<DESCRIBE
+      --describe    Describe available requests/commands.
+DESCRIBE
+
+        return 0
+    elif [[ $1 =~ ^--describe$ ]]; then
+	-resty-describe-requests
+	return 0
+    fi
+
     local url; url="$1"; [ -n "$1" ] && shift
     if [ -n "$url" ] && [[ "HEAD OPTIONS GET PATCH POST PUT TRACE DELETE" =~ $url ]] ; then
         resty-call $url "$@"
         return
+    elif [[ -z "$url" ]]; then
+	if [[ -n $_RESTY_HOST ]]; then
+	    echo "Current base URL: $_RESTY_HOST"
+	else
+	    echo "Base URL is currently unset. Use the -h option for help"
+	fi
+	return
     fi
 
     local args j; args=() j=1
@@ -42,6 +66,9 @@ resty [host] [options]:
 HELP
             -resty-help-options
             return 0
+	elif [[ $i =~ ^--describe$ ]]; then
+	    -resty-describe-requests
+	    return 0
         fi
     done
 
@@ -315,7 +342,7 @@ function resty-trace() {
 function -resty-help-options () {
 cat <<HELP
 
-      Options:
+      Options (per host options are stored in $_RESTY_CONF_DIR):
 
       -Q            Don't URL encode the path.
       -q <query>    Send query string with the path. A '?' is prepended to
@@ -330,8 +357,47 @@ cat <<HELP
                     URI base. Otherwise this is passed to curl for verbose
                     curl output.
       --dry-run     Just output the curl command.
-      <curl opt>    Any curl options will be passed down to curl.
+      <curl opt>    Any curl options will be passed down to curl (to view them: curl -h).
 HELP
+}
+
+function -resty-describe-requests() {
+    cat <<DESCRIPTION
+The following requests are available as commands.
+
+Format: [request] [path] [data] [options]
+
+Where:
+ [request] is one of the requests listed below
+ [path]    is appended to the current base URL: $_RESTY_HOST
+ [data]    is an optional string for POST, PUT & PATCH requests containing the request body
+           (it can also be supplied via STDIN)
+ [options] can be viewed with "resty -h" & "curl -h"
+
+The PUT, POST & PATCH commands require a request body that is supplied either as a string
+on the command line, or as STDIN, e.g: PUT /blogs/5.json '{"title":"hello", "body":"this is it"}'
+or: echo '{"title":"hello", "body":"this is it"}' | PUT /blogs/5.json
+
+GET       Request a representation of the specified resource. Requests using GET should only retrieve data,
+	  (no body in request, safe, idempotent, successful response has body).
+HEAD      Request the headers only. Identical to the GET request, but without the response body,
+	  (no body in request, safe, idempotent, no body in response).
+POST      Submit an entity to the specified resource, often causing a change in state or side effects on the server,
+	  (request has body, not safe, not idempotent, successful response has body).
+PUT       Replace all current representations of the target resource with the request payload,
+	  (request has body, not safe, idempotent, no body in response).
+OPTIONS   Describe the communication options for the target resource,
+	  (no body in request, safe, idempotent, successful response has body).
+TRACE     Perform a message loop-back test along the path to the target resource,
+	  (no body in request, safe, idempotent, no body in response).
+PATCH     Apply partial modifications to a resource,
+	  (request has body, not safe, not idempotent, successful response has body).
+DELETE    Delete the specified resource,
+	  (request may have body, not safe, idempotent, successful response may have body).
+
+Notes     "safe" means that the request doesn't make any changes to the server.
+          "idempotent" means that if exactly the same request is made again, no further changes are made to the server.
+DESCRIPTION
 }
 
 # With -W option, does not write to history file
