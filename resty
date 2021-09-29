@@ -171,7 +171,7 @@ HELP
     fi
 
     local -a all_opts curlopt_cmd
-    local raw query vimedit quote maybe_query verbose dry_run
+    local raw query vimedit quote maybe_query verbose dry_run curl_opt
 
     local -a resty_default_arg host_arg;
     for i in $(eval echo "\${_RESTY_OPT_DEFAULT_$method}") ; do resty_default_arg+=("$i") ; done
