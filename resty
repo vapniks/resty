@@ -138,9 +138,10 @@ function resty-call() {
     for opt in "$@"; do # print help if requested
         if [[ $opt =~ ^-h\|--help$ ]] ; then
             cat <<HELP
-$method [path] [options]:
+$method [/path] [options]:
 
-      Perform a $method request to host $_RESTY_HOST with path and options.
+      Perform a $method request to host $_RESTY_HOST with path and options
+      (note: path arg must start with a backslash /).
 HELP
             -resty-help-options
             return 0
@@ -166,7 +167,7 @@ HELP
     fi
     local body
     if [[ ! "$1" =~ ^- ]] ; then # retrieve data
-         body="$1"
+        body="$1"
         [[ $# -gt 0 ]] && shift
     fi
 
@@ -367,11 +368,12 @@ function -resty-describe-requests() {
     cat <<DESCRIPTION
 The following requests are available as commands.
 
-Format: [request] [path] [data] [options]
+Format: [request] [/path] [data] [options]
 
 Where:
  [request] is one of the requests listed below
- [path]    is appended to the current base URL: $_RESTY_HOST
+ [/path]   is appended to the current base URL: $_RESTY_HOST
+           (note: path arg must start with a backslash /)
  [data]    is an optional string for POST, PUT & PATCH requests containing the request body
            (it can also be supplied via STDIN)
  [options] can be viewed with "resty -h" & "curl -h"
