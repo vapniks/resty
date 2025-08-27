@@ -360,6 +360,8 @@ cat <<HELP
                     URI base. Otherwise this is passed to curl for verbose
                     curl output.
       --dry-run     Just output the curl command.
+      --json	    add headers specifying that sent & received data should be in JSON format
+      --xml	    add headers specifying that sent & received data should be in XML format
       <curl opt>    Any curl options will be passed down to curl (to view them: curl -h).
 HELP
 }
