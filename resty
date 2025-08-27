@@ -233,7 +233,12 @@ HELP
         rm -f "$tmpf"
     fi
 
-    if [ -n "$body" ] ; then curl_opt="--data-binary" ;fi
+    if [ -n "$body" ] ; then
+	curl_opt="--data-binary"
+    elif [[ "PATCH POST PUT" =~ $method ]]; then
+	print - "$method requires a body"
+	return 1
+    fi
     if [ "$method" = "OPTIONS" ] ; then raw="yes" ; fi
     if [ "$method" = "HEAD" ] ; then
         curl_opt="-I"
