@@ -337,7 +337,7 @@ SYNTAX
       -Q            Don't URL encode the path.
       -q <query>    Send query string with the path. A '?' is prepended to
                     <query> and concatenated onto the <path>.
-      -W            Don't write to history file (only when sourcing script).
+      -W            Don't write to history file (option only works when sourcing script).
       -V            Edit the input data interactively in 'vi'. (PUT, PATCH,
                     and POST requests only, with data piped to stdin.)
       -Z            Raw output. This disables any processing of HTML in the
