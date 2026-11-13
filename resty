@@ -65,7 +65,7 @@ function resty() {
 		&& export _RESTY_HOST="$url"
 	    ;;
 	*)
-	    resty "http://$url" "${args[@]}"
+	    resty "https://$url" "${args[@]}"
 	    return
 	    ;;
     esac
