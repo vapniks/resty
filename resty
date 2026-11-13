@@ -101,7 +101,7 @@ function resty-compute-host-option () {
 }
 
 function resty-call() {
-    if [ $# = 0 ] ; then echo "resty-call need args" >&2; return 1; fi
+    if [ $# = 0 ] ; then echo "resty-call needs args" >&2; return 1; fi
 
     local method; method="$1"; shift
     if [[ ! "HEAD OPTIONS GET PATCH POST PUT TRACE DELETE" =~ $method ]] ; then # this is not good
