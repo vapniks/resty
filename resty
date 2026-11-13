@@ -24,24 +24,9 @@ export _RESTY_DATA_DIR _RESTY_CONF_DIR
 
 
 function resty() {
-    local rx1='(^|[[:space:]])(-h|--help)($|[[:space:]])'
-    local rx2='(^|[[:space:]])--describe($|[[:space:]])'
-    if [[ "$@" =~ $rx1 ]]; then
-        cat <<HELP
-resty [host] [options]:
-
-      Set the host and default options to provided values
-HELP
-        -resty-help-options
-	cat <<DESCRIBE
-      --describe    Describe available requests/commands.
-DESCRIBE
-        return 0
-    elif [[ "$@" =~ $rx2 ]]; then
-	-resty-describe-requests
-	return 0
-    fi
-
+    # print help if requested & return
+    if -resty-show-help-maybe resty $@; then return 0; fi
+    
     local url; url="$1"; [ -n "$1" ] && shift
     if [ -n "$url" ] && [[ "HEAD OPTIONS GET PATCH POST PUT TRACE DELETE" =~ $url ]] ; then
         resty-call $url "$@"
@@ -123,18 +108,8 @@ function resty-call() {
         echo "First arg must be an HTTP verb, '$method' isn't" >&2
         return 1
     fi
-    for opt in "$@"; do # print help if requested
-        if [[ $opt =~ ^-h\|--help$ ]] ; then
-            cat <<HELP
-$method [/path] [options]:
-
-      Perform a $method request to host $_RESTY_HOST with path and options
-      (note: path arg must start with a backslash /).
-HELP
-            -resty-help-options
-            return 0
-        fi
-    done
+    # print help if requested & return
+    if -resty-show-help-maybe resty $@; then return 0; fi
 
     local _path __path
 
@@ -335,11 +310,30 @@ function resty-trace() {
     resty-call TRACE "$@"
 }
 
-function -resty-help-options () {
-cat <<HELP
+function -resty-show-help-maybe() {
+    local rx1='(^|[[:space:]])(-h|--help)($|[[:space:]])'
+    local rx2='(^|[[:space:]])--describe($|[[:space:]])'
+    if [[ "$@" =~ $rx1 ]]; then
+	if [[ $1 == resty ]]; then
+	    cat <<SYNTAX
+resty [host] [options]:
+
+      Set the host and default options to provided values.
+SYNTAX
+	else
+	    cat <<SYNTAX
+$1 [/path] [options]:
+
+      Perform a $1 request to host $_RESTY_HOST with path and options
+      (note: path arg must start with a backslash /).
+SYNTAX
+	fi
+        cat <<HELP
 
       Options (per host options are stored in $_RESTY_CONF_DIR):
 
+      -h/--help	    Show this help message
+      --describe    Describe available requests/commands.
       -Q            Don't URL encode the path.
       -q <query>    Send query string with the path. A '?' is prepended to
                     <query> and concatenated onto the <path>.
@@ -357,10 +351,9 @@ cat <<HELP
       --xml	    add headers specifying that sent & received data should be in XML format
       <curl opt>    Any curl options will be passed down to curl (to view them: curl -h).
 HELP
-}
-
-function -resty-describe-requests() {
-    cat <<DESCRIPTION
+        return 0
+    elif [[ "$@" =~ $rx2 ]]; then
+	cat <<DESCRIPTION
 The following requests are available as commands.
 
 Format: [request] [/path] [data] [options]
@@ -397,6 +390,9 @@ DELETE    Delete the specified resource,
 Notes     "safe" means that the request doesn't make any changes to the server.
           "idempotent" means that if exactly the same request is made again, no further changes are made to the server.
 DESCRIPTION
+	return 0
+    fi
+    return 1
 }
 
 # With -W option, does not write to history file
