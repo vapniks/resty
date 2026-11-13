@@ -121,7 +121,7 @@ function resty-call() {
     if [[ "POST PUT TRACE PATCH DELETE" =~ $method ]]; then local hasbody; hasbody="yes" ;fi
 
     if [ -d "$cookies" ] ; then # retrieve cookie
-	    (mkdir -p "$cookies"; echo "http://localhost*" > "$host")
+	(mkdir -p "$cookies"; echo "http://localhost*" > "$host")
     fi
 
     if [[ "$1" =~ ^/ ]] ; then # retrieve path
@@ -150,7 +150,7 @@ function resty-call() {
         if [ -n "$maybe_query" ] && [ -z "$query" ] ; then query="?$opt"; continue; fi
 
         case $opt in
-            --verbose|-v) verbose="yes";;
+            --verbose|-v) verbose="yes";; # TODO: also allow this option with the resty command
             # TODO; try adapt ; echo "$opt" | grep '^-[a-zA-Z]*v[a-zA-Z]*$' >/dev/null) \
             -V) vimedit="yes" ;;
             -Z) raw="yes" ;;
@@ -338,7 +338,7 @@ SYNTAX
       -q <query>    Send query string with the path. A '?' is prepended to
                     <query> and concatenated onto the <path>.
       -W            Don't write to history file (option only works when sourcing script).
-      -V            Edit the input data interactively in 'vi'. (PUT, PATCH,
+      -V            Edit the input data interactively with ${_RESTY_EDITOR//*\/}. (PUT, PATCH,
                     and POST requests only, with data piped to stdin.)
       -Z            Raw output. This disables any processing of HTML in the
                     response.
