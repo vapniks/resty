@@ -24,8 +24,9 @@ export _RESTY_DATA_DIR _RESTY_CONF_DIR
 
 
 function resty() {
-
-    if [[ $1 =~ ^-h\|--help$ ]]; then
+    local rx1='(^|[[:space:]])(-h|--help)($|[[:space:]])'
+    local rx2='(^|[[:space:]])--describe($|[[:space:]])'
+    if [[ "$@" =~ $rx1 ]]; then
         cat <<HELP
 resty [host] [options]:
 
@@ -35,9 +36,8 @@ HELP
 	cat <<DESCRIBE
       --describe    Describe available requests/commands.
 DESCRIBE
-
         return 0
-    elif [[ $1 =~ ^--describe$ ]]; then
+    elif [[ "$@" =~ $rx2 ]]; then
 	-resty-describe-requests
 	return 0
     fi
@@ -58,18 +58,6 @@ DESCRIBE
     local args j; args=() j=1
     for i in "$@"; do
         args[j]="$i" && j=$((j + 1))
-        if [[ $i =~ ^-h\|--help$ ]] ; then
-            cat <<HELP
-resty [host] [options]:
-
-      Set the host and default options to provided values
-HELP
-            -resty-help-options
-            return 0
-	elif [[ $i =~ ^--describe$ ]]; then
-	    -resty-describe-requests
-	    return 0
-        fi
     done
 
     if [ -n "$XDG_CONFIG_HOME" ]; then
