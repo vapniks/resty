@@ -81,18 +81,19 @@ function resty() {
 	resty-compute-host-option
     fi
     if [[ -n $verbose ]]; then
-	if [[ -n $_REST_OPTS ]]; then
-	    echo "curl options for all request methods & hosts: $_RESTY_OPTS"
+	if [[ -n "$_RESTY_OPTS" ]]; then
+	    echo "Options passed to resty for this session: $_RESTY_OPTS"
 	fi
-	local method savedoptions
+	local method savedoptions domain
+	domain=$(echo -n "$_RESTY_HOST" | perl -ane '/^https?:\/\/([^\/\*]+)/; print $1')
 	for method in HEAD OPTIONS GET PATCH POST PUT TRACE DELETE ; do
 	    eval "savedoptions=\${_RESTY_OPT_DEFAULT_${method}}"
 	    if [[ -n "$savedoptions" ]]; then
-		echo "curl options for $method requests on all hosts: $savedoptions"
+		echo "Saved options for $method requests to all hosts: $savedoptions"
 	    fi
 	    eval "savedoptions=\${_RESTY_OPT_HOST_${method}}"
 	    if [[ -n "$savedoptions" ]]; then
-		echo "curl options for $method requests on $_RESTY_HOST: $savedoptions"
+		echo "Saved options for $method requests to ${domain}: $savedoptions"
 	    fi
 	done
     fi
