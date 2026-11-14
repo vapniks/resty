@@ -26,7 +26,12 @@ export _RESTY_DATA_DIR _RESTY_CONF_DIR
 function resty() {
     # print help if requested & return
     if -resty-show-help-maybe resty $@; then return 0; fi
-    
+    local rx='^(-v|--verbose)$'
+    local verbose
+    if [[ "$1" =~ $rx ]]; then
+	verbose="yes"
+	shift
+    fi
     local url; url="$1"; [ -n "$1" ] && shift
     if [ -n "$url" ] && [[ "HEAD OPTIONS GET PATCH POST PUT TRACE DELETE" =~ $url ]] ; then
         resty-call $url "$@"
@@ -34,10 +39,13 @@ function resty() {
     elif [[ -z "$url" ]]; then
 	if [[ -n $_RESTY_HOST ]]; then
 	    echo "Current base URL: $_RESTY_HOST"
+	    if [[ -z "$verbose" ]]; then
+		return
+	    fi
 	else
 	    echo "Base URL is currently unset. Use the -h option for help"
+	    return
 	fi
-	return
     fi
 
     local args j; args=() j=1
@@ -56,21 +64,38 @@ function resty() {
 
     local host; host="$_RESTY_DATA_DIR/host"
 
-    case "$url" in
-	http://*|https://*)
-	    if [ "${#args[@]}" -ne 0 ]; then _RESTY_OPTS=$(printf "%q " "${args[@]}"|sed 's:[[:space:]]*$::'); else _RESTY_OPTS=""; fi
-	    export _RESTY_OPTS
-	    echo "$url" |grep '\*' >/dev/null || url="${url}*"
-	    (echo "$url" |tee "${_RESTY_NO_HISTORY:-$host}") |cat 1>&2 \
-		&& export _RESTY_HOST="$url"
-	    ;;
-	*)
-	    resty "https://$url" "${args[@]}"
-	    return
-	    ;;
-    esac
-
-    resty-compute-host-option
+    if [[ -n "$url" ]]; then
+	case "$url" in
+	    http://*|https://*)
+		if [ "${#args[@]}" -ne 0 ]; then _RESTY_OPTS=$(printf "%q " "${args[@]}"|sed 's:[[:space:]]*$::'); else _RESTY_OPTS=""; fi
+		export _RESTY_OPTS
+		echo "$url" |grep '\*' >/dev/null || url="${url}*"
+		(echo "$url" |tee "${_RESTY_NO_HISTORY:-$host}") |cat 1>&2 \
+		    && export _RESTY_HOST="$url"
+		;;
+	    *)
+		resty "https://$url" "${args[@]}"
+		return
+		;;
+	esac
+	resty-compute-host-option
+    fi
+    if [[ -n $verbose ]]; then
+	if [[ -n $_REST_OPTS ]]; then
+	    echo "curl options for all request methods & hosts: $_RESTY_OPTS"
+	fi
+	local method savedoptions
+	for method in HEAD OPTIONS GET PATCH POST PUT TRACE DELETE ; do
+	    eval "savedoptions=\${_RESTY_OPT_DEFAULT_${method}}"
+	    if [[ -n "$savedoptions" ]]; then
+		echo "curl options for $method requests on all hosts: $savedoptions"
+	    fi
+	    eval "savedoptions=\${_RESTY_OPT_HOST_${method}}"
+	    if [[ -n "$savedoptions" ]]; then
+		echo "curl options for $method requests on $_RESTY_HOST: $savedoptions"
+	    fi
+	done
+    fi
 }
 
 function resty-compute-host-option () {
@@ -150,7 +175,7 @@ function resty-call() {
         if [ -n "$maybe_query" ] && [ -z "$query" ] ; then query="?$opt"; continue; fi
 
         case $opt in
-            --verbose|-v) verbose="yes";; # TODO: also allow this option with the resty command
+            --verbose|-v) verbose="yes";;
             # TODO; try adapt ; echo "$opt" | grep '^-[a-zA-Z]*v[a-zA-Z]*$' >/dev/null) \
             -V) vimedit="yes" ;;
             -Z) raw="yes" ;;
@@ -239,7 +264,7 @@ function resty-call() {
     if [ -n "$out" ]; then out=$(echo "$out" | eval "$display") ; fi
 
     if [[ "$display" =~ ^lynx ]] || [[ "$display" =~ ^elinks ]] ; then
-        out=$(echo "$out" |perl -e "\$host='$(echo "$_RESTY_HOST" |sed 's/^\(https*:\/\/[^\/*]*\).*$/\1/')';" \
+        out=$(echo "$out"|perl -e "\$host='$(echo "$_RESTY_HOST" |sed 's/^\(https*:\/\/[^\/*]*\).*$/\1/')';" \
                                 -e "$(cat <<'PERL'
             @a=<>;
             $s=0;
@@ -272,7 +297,7 @@ function resty-load-alias(){
     # maybe add option?
 }
 
-resty-load-alias # Loaded by default. §maybe: Latter do an option (opt-in or opt-out)
+resty-load-alias # Loaded by default. §maybe: Later do an option (opt-in or opt-out)
 
 function resty-unload-alias(){
     unalias HEAD OPTIONS GET POST PUT TRACE PATCH DELETE
